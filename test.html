@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Parcel Sandbox</title>
+    <meta charset="UTF-8" />
+</head>
+
+<body>
+    <div id="container">
+        <!-- <div id="app"></div> -->
+        <h2>Select the Input file</h2>
+        <input type="file" id="files" name="file" /></br></br>
+        <div id="first-line"></div></br>
+        <div id="second-line"></div></br>
+
+        <button id="output" name="out">Download output file</button>
+    </div>
+    <script>
+
+        document.getElementById("files").addEventListener("change", readText);
+        document.getElementById("output").addEventListener("click", saveTextAsFile);
+
+        function findMatch(source, makeSum, indexArr = [], tsum = 0) {
+            let count = Math.floor(source.length - 1);
+            for (let i = count; i >= 0; i--) {
+                let startVal = source[i];
+                let totalSum = tsum + startVal;
+                let difference = makeSum - startVal;
+                let diffArray = source.filter((item, index) => {
+                    return item <= difference && index !== i;
+                });
+                if (difference === 0) {
+                    return {
+                        indexArr: [i, ...indexArr],
+                        totalSum: tsum + startVal
+                    };
+                } else if (difference < 0 || diffArray.length === 0) {
+                    continue;
+                } else {
+                    let found = findMatch(diffArray, difference, [i, ...indexArr], totalSum);
+                    if (found && found.totalSum) {
+                        return found;
+                    }
+                }
+            }
+        }
+        function findClosestMatch(data, sum) {
+            const matchFound = findMatch(data, sum);
+            if (matchFound !== undefined) {
+                return matchFound;
+            } else {
+                return findClosestMatch(data, sum - 1);
+            }
+        }
+
+        function readText(e) {
+            if (e.target.files && e.target.files[0]) {
+                let reader = new FileReader();
+                reader.readAsText(e.target.files[0]);
+                reader.onload = function () {
+                    let output = reader.result.split("\n");
+                    const sum = output[0].split(" ").map(Number)[0];
+                    const data = output[1].split(" ").map(Number);
+                    let a = findClosestMatch(data, sum);
+                    console.log(a);
+
+                    const firstLine = a.indexArr.length;
+                    const secondLine = a.indexArr.toString().replace(/,/g, " ");
+                    document.getElementById("first-line").innerHTML = firstLine;
+                    document.getElementById("second-line").innerHTML = secondLine;
+                };
+            }
+        }
+
+        function saveTextAsFile(event) {
+            var textToWrite = document.getElementById("first-line").innerHTML + '\n' + document.getElementById("second-line").innerHTML;
+            var textFileAsBlob = new Blob([textToWrite], { type: "text/plain" });
+            var downloadLink = document.createElement("a");
+            downloadLink.download = "Output";
+            downloadLink.innerHTML = "Download File";
+            if (window.webkitURL != null) {
+                downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+            } else {
+                downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+                downloadLink.onclick = document.body.removeChild(event.target);
+                downloadLink.style.display = "none";
+                document.body.appendChild(downloadLink);
+            }
+
+            downloadLink.click();
+        }
+
+    </script>
+</body>
+
+</html>
